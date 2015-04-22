@@ -119,7 +119,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssignmentExpression.cs" />
     <Compile Include="BreakStatement.cs" />
+    <Compile Include="ConditionalExpression.cs" />
     <Compile Include="ContinueStatement.cs" />
     <Compile Include="DoWhile.cs" />
     <Compile Include="Environment.cs" />
@@ -136,6 +138,7 @@
     <Compile Include="SwitchStatement.cs" />
     <Compile Include="SymbolTableBuilder.cs" />
     <Compile Include="TypeSystem.cs" />
+    <Compile Include="UsingStatement.cs" />
     <Compile Include="WhileStatement.cs" />
   </ItemGroup>
   <ItemGroup>

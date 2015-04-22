@@ -54,8 +54,9 @@
 						case SyntaxKind.CaseKeyword:
 							ulong constantValue;
 							var caseLabel = (CaseSwitchLabelSyntax)label;
+							var typeInfo = this.semanticModel.GetTypeInfo(caseLabel.Value);
 							object constantValueObject = this.semanticModel.GetConstantValue(caseLabel.Value).Value;
-							switch (governingType.ConvertedType.SpecialType)
+							switch (typeInfo.Type.SpecialType)
 							{
 								case SpecialType.System_Boolean:
 									constantValue = (bool)constantValueObject ? 1U : 0;
@@ -68,16 +69,12 @@
 									constantValue = (ulong)constantValueObject;
 									break;
 								case SpecialType.System_SByte:
-									constantValue = (ulong)((int)constantValueObject);
-									break;
 								case SpecialType.System_Int16:
-									constantValue = (ulong)((int)(constantValueObject));
-									break;
 								case SpecialType.System_Int32:
 									constantValue = (ulong)((int)(constantValueObject));
 									break;
 								case SpecialType.System_Int64:
-									constantValue = (ulong)((long)(constantValueObject));
+									constantValue = (ulong)((long)constantValueObject);
 									break;
 								case SpecialType.System_String:
 									throw new NotImplementedException("Switch on string type is not implemented");

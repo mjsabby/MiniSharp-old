@@ -160,7 +160,7 @@
             }
 	    }
 
-        /// <summary>
+		/// <summary>
         /// Variables, fields, method names
         /// </summary>
         /// <param name="node"></param>
@@ -170,67 +170,6 @@
             var symbol = currentSymbolTable[node.Identifier.Text].Item2;
 	        this.valueStack.Push(LLVM.BuildLoad(this.builder, symbol, string.Empty));
 	    }
-
-		/// <summary>
-		/// Non variable declaration assignments
-		/// TODO: requires type conversion
-		/// </summary>
-		public override void VisitAssignmentExpression(AssignmentExpressionSyntax node)
-	    {
-	        if (node.Kind() != SyntaxKind.SimpleAssignmentExpression)
-	        {
-	            throw new Exception("only simple expressions are supported");
-	        }
-
-	        var currentSymbolTable = this.symbolTable.Peek().Locals;
-	        var id = (IdentifierNameSyntax)node.Left;
-	        var symbol = currentSymbolTable[id.Identifier.Text].Item2;
-
-	        this.valueStack.Push(LLVM.BuildStore(this.builder, this.Pop(node.Right), symbol));
-	    }
-
-		/// <summary>
-		/// 7.14 Conditional operator
-		/// 
-		/// Type Conversion    :
-		/// GC Root            : N/A
-		/// Sign Extension     : N/A
-		/// Stack Balance      : +1
-		/// </summary>
-		public override void VisitConditionalExpression(ConditionalExpressionSyntax node)
-		{
-			LLVMBasicBlockRef condTrue = LLVM.AppendBasicBlock(this.function, "cond.true");
-			LLVMBasicBlockRef condFalse = LLVM.AppendBasicBlock(this.function, "cond.false");
-			LLVMBasicBlockRef condEnd = LLVM.AppendBasicBlock(this.function, "cond.end");
-			
-			LLVM.BuildCondBr(this.builder, this.Pop(node.Condition), condTrue, condFalse);
-
-			// true case
-			LLVM.PositionBuilderAtEnd(this.builder, condTrue);
-			this.EnterScope();
-			var trueValue = this.Pop(node.WhenTrue);
-			this.LeaveScope();
-			LLVM.BuildBr(this.builder, condEnd);
-
-			condTrue = LLVM.GetInsertBlock(this.builder);
-
-			// false case
-			LLVM.PositionBuilderAtEnd(this.builder, condFalse);
-			this.EnterScope();
-			var falseValue = this.Pop(node.WhenFalse);
-			this.LeaveScope();
-			LLVM.BuildBr(this.builder, condEnd);
-
-			condFalse = LLVM.GetInsertBlock(this.builder);
-
-			// end
-			LLVM.PositionBuilderAtEnd(this.builder, condEnd);
-			var phi = LLVM.BuildPhi(this.builder, this.semanticModel.GetTypeInfo(node.WhenTrue).LLVMTypeRef(), "cond");
-			LLVM.AddIncoming(phi, out trueValue, out condTrue, 1);
-			LLVM.AddIncoming(phi, out falseValue, out condFalse, 1);
-
-			this.valueStack.Push(phi);
-		}
 
 		/// <summary>
 		/// Binary expression

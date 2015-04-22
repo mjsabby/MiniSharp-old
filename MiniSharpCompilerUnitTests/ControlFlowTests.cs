@@ -451,9 +451,236 @@ return -11;
 			var data = Initialize(tree);
 			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
 			v.Visit(tree.GetRoot());
-			LLVM.WriteBitcodeToFile(data.module, @"C:\a.bc");
 			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
 			Assert.IsTrue(addMethod() == -11);
+		}
+
+		[TestMethod]
+		public void SwitchWith_NoMatchingCaseLabel_And_NoDefaultLabel()
+		{
+			var tree = CSharpSyntaxTree.ParseText(@"
+public class Test {
+            public static int Main(int a)
+            {
+int i = 5;
+    switch (i)
+    {
+      case 1:
+      case 2:
+      case 3:
+        return 1;
+      case 1001:
+      case 1002:
+      case 1003:
+        return 2;
+    }
+    return 5;
+            }
+         }
+");
+
+			var data = Initialize(tree);
+			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
+			v.Visit(tree.GetRoot());
+			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
+			Assert.IsTrue(addMethod() == 5);
+		}
+
+		[TestMethod]
+		public void ByteTypeSwitchArgumentExpression()
+		{
+			var tree = CSharpSyntaxTree.ParseText(@"
+public class Test {
+            public static int Main(int a)
+            {
+int ret = 2;
+		byte b = 2;
+		switch (b) {
+		case 1:
+		case 2:
+			ret--;
+			break;
+		case 3:
+			break;
+		default:
+			break;
+		}
+		switch (b) {
+		case 1:
+		case 3:
+			break;
+		default:
+			ret--;
+       	    break;
+		}
+
+return ret;
+            }
+         }
+");
+
+			var data = Initialize(tree);
+			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
+			v.Visit(tree.GetRoot());
+			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
+			Assert.IsTrue(addMethod() == 0);
+		}
+
+		[TestMethod]
+		public void SByteTypeSwitchArgumentExpression()
+		{
+			var tree = CSharpSyntaxTree.ParseText(@"
+public class Test {
+            public static int Main(int a)
+            {
+int ret = 2;
+		sbyte b = -2;
+		switch (b) {
+		case -1:
+		case -2:
+			ret--;
+			break;
+		case -3:
+			break;
+		default:
+			break;
+		}
+		switch (b) {
+		case -1:
+		case -3:
+			break;
+		default:
+			ret--;
+       	    break;
+		}
+
+return ret;
+            }
+         }
+");
+
+			var data = Initialize(tree);
+			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
+			v.Visit(tree.GetRoot());
+			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
+			Assert.IsTrue(addMethod() == 0);
+		}
+
+		[TestMethod]
+		public void LongTypeSwitchArgumentExpression1()
+		{
+			var tree = CSharpSyntaxTree.ParseText(@"
+public class Test {
+            public static int Main(int a)
+            {
+int ret = 2;
+		long b = -9223372036854775808L;
+		switch (b) {
+		case -1:
+		case -9223372036854775808L:
+			ret--;
+			break;
+		case -3:
+			break;
+		default:
+			break;
+		}
+		switch (b) {
+		case -1:
+		case -3:
+			break;
+		default:
+			ret--;
+       	    break;
+		}
+
+return ret;
+            }
+         }
+");
+
+			var data = Initialize(tree);
+			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
+			v.Visit(tree.GetRoot());
+			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
+			Assert.IsTrue(addMethod() == 0);
+		}
+
+		[TestMethod]
+		public void LongTypeSwitchArgumentExpression2()
+		{
+			var tree = CSharpSyntaxTree.ParseText(@"
+public class Test {
+            public static int Main(int a)
+            {
+int ret = 2;
+		long b = -9223372036854775808L;
+		switch (b) {
+		case -1:
+		case -2:
+			ret--;
+			break;
+		case -3:
+			break;
+		default:
+			break;
+		}
+		switch (b) {
+		case -1:
+		case -3:
+			break;
+		default:
+			ret--;
+       	    break;
+		}
+
+return ret;
+            }
+         }
+");
+
+			var data = Initialize(tree);
+			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
+			v.Visit(tree.GetRoot());
+			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
+			Assert.IsTrue(addMethod() == 1);
+		}
+
+		[TestMethod]
+		public void LongTypeSwitchArgumentExpression3()
+		{
+			var tree = CSharpSyntaxTree.ParseText(@"
+public class Test {
+            public static int Main(int a)
+            {
+long b = 42;
+int ret = 2;
+		switch (b) {
+		case 1:
+            ret++;
+            break;            
+		case 2:
+			ret--;
+			break;
+		case 3:
+			break;
+		case 4:
+			ret = ret + 7;
+            break;
+		default:
+			ret = ret + 2;
+            break;
+		}
+		return ret;
+            }
+         }
+");
+
+			var data = Initialize(tree);
+			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
+			v.Visit(tree.GetRoot());
+			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
+			Assert.IsTrue(addMethod() == 4);
 		}
 
 		[UnmanagedFunctionPointer(CallingConvention.Cdecl)]

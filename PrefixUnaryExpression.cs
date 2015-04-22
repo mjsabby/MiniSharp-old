@@ -49,6 +49,14 @@
 						case SpecialType.System_Decimal:
 							operand = LLVM.BuildFNeg(this.builder, this.Pop(node.Operand), "fneg");
 							break;
+						case SpecialType.System_UInt32:
+						case SpecialType.System_UInt64:
+							if (node.Operand.IsKind(SyntaxKind.NumericLiteralExpression))
+							{
+								operand = LLVM.BuildNeg(this.builder, this.Pop(node.Operand), "neg");
+								break;
+							}
+							throw new Exception("UnaryMinusExpression for uint32 and uint64 is only applicable for numerical literals");
 						default:
 							throw new Exception("UnaryMinusExpression is only supported for int32, int64, single, double, decimal");
 					}
