@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-	using System.Diagnostics;
 	using LLVMSharp;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
@@ -159,26 +158,6 @@
                 }
             }
 	    }
-
-		
-		/// <summary>
-		/// TODO: needs type conversion
-		/// </summary>
-		/// <param name="node"></param>
-		public override void VisitArgument(ArgumentSyntax node)
-		{
-			base.VisitArgument(node);
-		}
-
-		/// <summary>
-		/// 
-		/// TODO: requires type conversion
-		/// </summary>
-		/// <param name="node"></param>
-		public override void VisitCastExpression(CastExpressionSyntax node)
-		{
-			base.VisitCastExpression(node);
-		}
 
         // More information can be found: http://llvm.org/docs/GarbageCollection.html#llvm-ir-features
 	    private void MarkGCRoot(LLVMValueRef value, TypeInfo type)

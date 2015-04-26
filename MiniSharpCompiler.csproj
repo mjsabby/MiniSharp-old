@@ -122,9 +122,11 @@
     <Compile Include="AssignmentExpression.cs" />
     <Compile Include="BinaryExpression.cs" />
     <Compile Include="BreakStatement.cs" />
+    <Compile Include="CastExpression.cs" />
     <Compile Include="ConditionalExpression.cs" />
     <Compile Include="ContinueStatement.cs" />
     <Compile Include="DoWhile.cs" />
+    <Compile Include="ElementAccessExpression.cs" />
     <Compile Include="Environment.cs" />
     <Compile Include="ForStatement.cs" />
     <Compile Include="GotoStatement.cs" />
