@@ -305,6 +305,27 @@
 			this.Push(node, phi);
 		}
 
+		private void RelEqExpression(BinaryExpressionSyntax node)
+		{
+			var left = this.semanticModel.GetTypeInfo(node.Left);
+			var right = this.semanticModel.GetTypeInfo(node.Right);
+
+			var leftType = left.Type;
+			var rightType = right.Type;
+
+			if (!leftType.Equals(rightType))
+			{
+				throw new Exception("Type mismatch exception");
+			}
+
+			if (leftType.SpecialType == SpecialType.System_Double || leftType.SpecialType == SpecialType.System_Single)
+			{
+				throw new Exception("Single/Double relational expression");
+			}
+
+			this.valueStack.Push(LLVM.BuildICmp(this.builder, TypeSystem.IntPredicate(node.Kind()), this.Pop(node.Left), this.Pop(node.Right), "cmptmp"));
+		}
+
 		private void BinOp(ExpressionSyntax node, ExpressionSyntax left, ExpressionSyntax right, LLVMOpcode opcode, string name, bool visit = true)
 		{
 			var lhs = visit ? this.Pop(left) : this.OnlyPop(left);
