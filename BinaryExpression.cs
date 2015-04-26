@@ -305,25 +305,40 @@
 			this.Push(node, phi);
 		}
 
+		/// <summary>
+		/// TODO: Pointers, Strings, IntPtr, Object type?
+		/// </summary>
 		private void RelEqExpression(BinaryExpressionSyntax node)
 		{
 			var left = this.semanticModel.GetTypeInfo(node.Left);
 			var right = this.semanticModel.GetTypeInfo(node.Right);
 
-			var leftType = left.Type;
-			var rightType = right.Type;
-
-			if (!leftType.Equals(rightType))
+			if (!left.ConvertedType.Equals(right.ConvertedType))
 			{
-				throw new Exception("Type mismatch exception");
+				throw new Exception("Unreachable");
 			}
 
-			if (leftType.SpecialType == SpecialType.System_Double || leftType.SpecialType == SpecialType.System_Single)
+			var type = left.ConvertedType.SpecialType;
+			LLVMValueRef operand;
+
+			switch (type)
 			{
-				throw new Exception("Single/Double relational expression");
+				case SpecialType.System_Int32:
+				case SpecialType.System_UInt32:
+				case SpecialType.System_Int64:
+				case SpecialType.System_UInt64:
+					operand = LLVM.BuildICmp(this.builder, TypeSystem.IntPredicate(type, node.Kind()), this.Pop(node.Left), this.Pop(node.Right), "cmp");
+					break;
+				case SpecialType.System_Single:
+				case SpecialType.System_Double:
+				case SpecialType.System_Decimal:
+					operand = LLVM.BuildFCmp(this.builder, TypeSystem.RealPredicate(node.Kind()), this.Pop(node.Left), this.Pop(node.Right), "fcmp");
+					break;
+			default:
+					throw new NotImplementedException("Operator overloading is not yet implemented");
 			}
 
-			this.valueStack.Push(LLVM.BuildICmp(this.builder, TypeSystem.IntPredicate(node.Kind()), this.Pop(node.Left), this.Pop(node.Right), "cmptmp"));
+			this.Push(node, operand);
 		}
 
 		private void BinOp(ExpressionSyntax node, ExpressionSyntax left, ExpressionSyntax right, LLVMOpcode opcode, string name, bool visit = true)

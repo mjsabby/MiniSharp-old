@@ -154,7 +154,7 @@
 
                 if (variable.Initializer != null)
                 {
-                    this.valueStack.Push(LLVM.BuildStore(this.builder, this.Pop(variable.Initializer.Value), alloca));
+                    this.Push(node.Type, LLVM.BuildStore(this.builder, this.Pop(variable.Initializer.Value), alloca));
                 }
             }
 	    }

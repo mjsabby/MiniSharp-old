@@ -403,7 +403,12 @@
 
 		public static LLVMBool IsSignExtended(this TypeInfo t)
 		{
-			switch (t.ConvertedType.SpecialType)
+			return t.ConvertedType.SpecialType.IsSignExtended();
+		}
+
+		public static LLVMBool IsSignExtended(this SpecialType t)
+		{
+			switch (t)
 			{
 				case SpecialType.System_SByte:
 				case SpecialType.System_Int16:
@@ -459,25 +464,52 @@
 			return t.ConvertedType.Convert();
 		}
 
-		public static LLVMIntPredicate IntPredicate(SyntaxKind kind)
-	    {
-            switch (kind)
-	        {
-	            case SyntaxKind.EqualsExpression:
-	                return LLVMIntPredicate.LLVMIntEQ;
-	            case SyntaxKind.NotEqualsExpression:
-	                return LLVMIntPredicate.LLVMIntNE;
-	            case SyntaxKind.GreaterThanExpression:
-	                return LLVMIntPredicate.LLVMIntSGT;
-	            case SyntaxKind.GreaterThanOrEqualExpression:
-	                return LLVMIntPredicate.LLVMIntSGE;
-	            case SyntaxKind.LessThanExpression:
-	                return LLVMIntPredicate.LLVMIntSLT;
-	            case SyntaxKind.LessThanOrEqualExpression:
-	                return LLVMIntPredicate.LLVMIntSLE;
-	            default:
-	                throw new Exception("Unreachable");
-	        }
-	    }
+		public static bool ToBool(this LLVMBool b)
+		{
+			return b.Value != 0;
+		}
+
+		public static LLVMIntPredicate IntPredicate(SpecialType type, SyntaxKind kind)
+		{
+			bool signExtended = type.IsSignExtended().ToBool();
+			switch (kind)
+			{
+				case SyntaxKind.EqualsExpression:
+					return LLVMIntPredicate.LLVMIntEQ;
+				case SyntaxKind.NotEqualsExpression:
+					return LLVMIntPredicate.LLVMIntNE;
+				case SyntaxKind.GreaterThanExpression:
+					return signExtended ? LLVMIntPredicate.LLVMIntSGT : LLVMIntPredicate.LLVMIntUGT;
+				case SyntaxKind.GreaterThanOrEqualExpression:
+					return signExtended ? LLVMIntPredicate.LLVMIntSGE : LLVMIntPredicate.LLVMIntUGE;
+				case SyntaxKind.LessThanExpression:
+					return signExtended ? LLVMIntPredicate.LLVMIntSLT : LLVMIntPredicate.LLVMIntULT;
+				case SyntaxKind.LessThanOrEqualExpression:
+					return signExtended ? LLVMIntPredicate.LLVMIntSLE : LLVMIntPredicate.LLVMIntULE;
+				default:
+					throw new Exception("Unreachable");
+			}
+		}
+
+		public static LLVMRealPredicate RealPredicate(SyntaxKind kind)
+		{
+			switch (kind)
+			{
+				case SyntaxKind.EqualsExpression:
+					return LLVMRealPredicate.LLVMRealOEQ;
+				case SyntaxKind.NotEqualsExpression:
+					return LLVMRealPredicate.LLVMRealUNE;
+				case SyntaxKind.GreaterThanExpression:
+					return LLVMRealPredicate.LLVMRealOGT;
+				case SyntaxKind.GreaterThanOrEqualExpression:
+					return LLVMRealPredicate.LLVMRealOGE;
+				case SyntaxKind.LessThanExpression:
+					return LLVMRealPredicate.LLVMRealOLT;
+				case SyntaxKind.LessThanOrEqualExpression:
+					return LLVMRealPredicate.LLVMRealOLE;
+				default:
+					throw new Exception("Unreachable");
+			}
+		}
 	}
 }
