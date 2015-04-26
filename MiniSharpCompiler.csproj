@@ -120,6 +120,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssignmentExpression.cs" />
+    <Compile Include="BinaryExpression.cs" />
     <Compile Include="BreakStatement.cs" />
     <Compile Include="ConditionalExpression.cs" />
     <Compile Include="ContinueStatement.cs" />
@@ -127,6 +128,7 @@
     <Compile Include="Environment.cs" />
     <Compile Include="ForStatement.cs" />
     <Compile Include="GotoStatement.cs" />
+    <Compile Include="IdentifierName.cs" />
     <Compile Include="IfStatement.cs" />
     <Compile Include="LabeledStatement.cs" />
     <Compile Include="LiteralExpression.cs" />

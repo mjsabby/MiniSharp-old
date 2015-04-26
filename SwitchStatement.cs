@@ -17,6 +17,7 @@
 		{
 			var @default = LLVM.AppendBasicBlock(this.function, "sw.default");
 			var epilog = LLVM.AppendBasicBlock(this.function, "sw.epilog");
+			bool defaultEpilogWritten = false;
 
 			this.controlFlowStack.Push(new ControlFlowTarget(epilog, epilog));
 
@@ -35,6 +36,7 @@
 				{
 					if (label.Keyword.IsKind(SyntaxKind.DefaultKeyword))
 					{
+						defaultEpilogWritten = true;
 						isDefault = true;
 					}
 				}
@@ -102,8 +104,11 @@
 
 			this.currentSwitchStatement = null;
 
-			LLVM.PositionBuilderAtEnd(this.builder, @default);
-			LLVM.BuildBr(this.builder, epilog);
+			if (!defaultEpilogWritten)
+			{
+				LLVM.PositionBuilderAtEnd(this.builder, @default);
+				LLVM.BuildBr(this.builder, epilog);
+			}
 
 			LLVM.PositionBuilderAtEnd(this.builder, epilog);
 			this.controlFlowStack.Pop();

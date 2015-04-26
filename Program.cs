@@ -80,14 +80,30 @@ namespace MiniSharpCompiler
 			// target lays out data structures.
 			LLVM.AddTargetData(LLVM.GetExecutionEngineTargetData(engine), passManager);
 			
-			float jf = -10;
-			int jff = (int)-10.0;
-			var ddddd = !true;
-			ushort q = 10;
-			var ffffff = -q;
-			var dd = true ? q : 6L;
-			dd.ToString();
 			var tree = CSharpSyntaxTree.ParseText(@"
+static int Main(int args)
+        {
+            int i = 0;
+            int loopCounter = 0;
+            while (i < 100)
+            {
+                if (i % 2 == 0)
+                {
+                    i = i + 1;
+                    continue;
+                    i = i - 1;
+                }
+                else
+                {
+                    i = i + 1;
+                }
+
+                loopCounter = loopCounter + 1;
+            }
+
+            return loopCounter;
+        }");
+			var tree2 = CSharpSyntaxTree.ParseText(@"
 
 using System;
 using System.Collections;
@@ -205,20 +221,23 @@ return 0;
             //symbolVisitor.Visit(sm);
 
 		    var stack = new Stack<LLVMValueRef>();
-            //var v = new LLVMIRGenerationVisitor(model, module, builder, stack);
+            var v = new LLVMIRGenerationVisitor(model, module, builder, stack);
 
-		    var v = new Visitor(model);
+		    //var v = new Visitor(model);
             v.Visit(sm);
-		    //LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
+			LLVM.DumpModule(module);
 
-		    //int ddd = f();
-            LLVM.AddCFGSimplificationPass(passManager);
-            LLVM.AddInstructionCombiningPass(passManager);
-            LLVM.AddBasicAliasAnalysisPass(passManager);
-            LLVM.AddGVNPass(passManager);
-            LLVM.AddPromoteMemoryToRegisterPass(passManager);
-		//    LLVM.RunFunctionPassManager(passManager, v.Function);
-            LLVM.DumpModule(module);
+		    LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
+
+			//int ddd = f();
+			LLVM.AddCFGSimplificationPass(passManager);
+			LLVM.AddInstructionCombiningPass(passManager);
+			LLVM.AddBasicAliasAnalysisPass(passManager);
+			LLVM.AddGVNPass(passManager);
+			LLVM.AddPromoteMemoryToRegisterPass(passManager);
+			LLVM.RunFunctionPassManager(passManager, v.Function);
+			LLVM.RunFunctionPassManager(passManager, v.Function);
+			LLVM.DumpModule(module);
 
           //  var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(engine, v.Function), typeof(Add));
 //		    var x = addMethod();
@@ -430,7 +449,7 @@ return 0;
 						    throw new Exception("Unreachable");
 				    }
 
-                    Console.WriteLine(label.Keyword);
+                    Console.WriteLine(label.Keyword.ToString());
 			    }
 		    }
 		    base.VisitSwitchStatement(node);

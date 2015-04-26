@@ -88,7 +88,7 @@
 
                 LLVM.BuildStore(this.builder, llvmParam, alloca);
                 this.MarkGCRoot(llvmParam, tuple.Item2);
-                index++;
+				++index;
             }
 
 	        var allocaBuilder = new SymbolTableBuilder(this.semanticModel, this.builder);
@@ -160,77 +160,7 @@
             }
 	    }
 
-		/// <summary>
-        /// Variables, fields, method names
-        /// </summary>
-        /// <param name="node"></param>
-	    public override void VisitIdentifierName(IdentifierNameSyntax node)
-	    {
-            var currentSymbolTable = this.symbolTable.Peek().Locals;
-            var symbol = currentSymbolTable[node.Identifier.Text].Item2;
-	        this.valueStack.Push(LLVM.BuildLoad(this.builder, symbol, string.Empty));
-	    }
-
-		/// <summary>
-		/// Binary expression
-		/// 
-		/// TODO: Requires type conversion
-		/// </summary>
-		public override void VisitBinaryExpression(BinaryExpressionSyntax node)
-		{
-			var leftType = this.semanticModel.GetTypeInfo(node);
-			var rightType = this.semanticModel.GetTypeInfo(node);
-			SyntaxKind kind = node.Kind();
-	        switch (kind)
-	        {
-	            case SyntaxKind.AddExpression:
-	                this.AddExpression(node);
-	                break;
-	            case SyntaxKind.DivideExpression:
-	                this.DivExpression(node);
-	                break;
-	            case SyntaxKind.ModuloExpression:
-	                this.ModExpression(node);
-	                break;
-	            case SyntaxKind.MultiplyExpression:
-	                this.MulExpression(node);
-	                break;
-	            case SyntaxKind.SubtractExpression:
-	                this.SubExpression(node);
-	                break;
-	            case SyntaxKind.BitwiseAndExpression:
-	                this.BitAndExpression(node);
-	                break;
-	            case SyntaxKind.BitwiseOrExpression:
-	                this.BitOrExpression(node);
-	                break;
-	            case SyntaxKind.ExclusiveOrExpression:
-	                this.XorExpression(node);
-	                break;
-	            case SyntaxKind.LogicalAndExpression:
-					Debug.Assert(leftType.Type.SpecialType == SpecialType.System_Boolean);
-					Debug.Assert(rightType.Type.SpecialType == SpecialType.System_Boolean);
-					this.ConditionalAndExpression(node);
-	                break;
-	            case SyntaxKind.LogicalOrExpression:
-					Debug.Assert(leftType.Type.SpecialType == SpecialType.System_Boolean);
-					Debug.Assert(rightType.Type.SpecialType == SpecialType.System_Boolean);
-					this.ConditionalOrExpression(node);
-	                break;
-	            case SyntaxKind.EqualsExpression:
-                case SyntaxKind.NotEqualsExpression:
-	            case SyntaxKind.LessThanExpression:
-	            case SyntaxKind.LessThanOrEqualExpression:
-	            case SyntaxKind.GreaterThanExpression:
-	            case SyntaxKind.GreaterThanOrEqualExpression:
-	                this.RelEqExpression(node);
-	                break;
-                default:
-	                throw new Exception("Unreachable");
-	        }
-	    }
-
-
+		
 		/// <summary>
 		/// TODO: needs type conversion
 		/// </summary>
@@ -269,118 +199,6 @@
             }
 
             this.valueStack.Push(LLVM.BuildICmp(this.builder, TypeSystem.IntPredicate(node.Kind()), this.Pop(node.Left), this.Pop(node.Right), "cmptmp"));
-	    }
-
-	    private void ConditionalAndExpression(BinaryExpressionSyntax node)
-	    {
-			LLVMBasicBlockRef incoming = LLVM.GetInsertBlock(this.builder);
-			LLVMBasicBlockRef lorRhs = LLVM.AppendBasicBlock(this.function, "lor.rhs");
-			LLVMBasicBlockRef lorEnd = LLVM.AppendBasicBlock(this.function, "lor.end");
-
-			var lhs = this.Pop(node.Left);
-
-			LLVM.BuildCondBr(this.builder, lhs, lorEnd, lorRhs);
-
-			LLVM.PositionBuilderAtEnd(this.builder, lorRhs);
-			var rhs = this.Pop(node.Right);
-			LLVM.BuildBr(this.builder, lorEnd);
-
-			LLVM.PositionBuilderAtEnd(this.builder, lorEnd);
-			var phi = LLVM.BuildPhi(this.builder, LLVM.Int1Type(), "phi");
-			var falseValue = LLVM.ConstInt(LLVM.Int1Type(), 1, False);
-
-			LLVM.AddIncoming(phi, out falseValue, out incoming, 1);
-			LLVM.AddIncoming(phi, out rhs, out lorRhs, 1);
-
-			LLVM.PositionBuilderAtEnd(this.builder, lorEnd);
-
-			this.valueStack.Push(phi);
-		}
-
-        private void ConditionalOrExpression(BinaryExpressionSyntax node)
-        {
-	        LLVMBasicBlockRef incoming = LLVM.GetInsertBlock(this.builder);
-            LLVMBasicBlockRef lorRhs = LLVM.AppendBasicBlock(this.function, "lor.rhs");
-            LLVMBasicBlockRef lorEnd = LLVM.AppendBasicBlock(this.function, "lor.end");
-			
-	        var lhs = this.Pop(node.Left);
-
-	        LLVM.BuildCondBr(this.builder, lhs, lorEnd, lorRhs);
-
-			LLVM.PositionBuilderAtEnd(this.builder, lorRhs);
-	        var rhs = this.Pop(node.Right);
-	        LLVM.BuildBr(this.builder, lorEnd);
-
-			LLVM.PositionBuilderAtEnd(this.builder, lorEnd);
-	        var phi = LLVM.BuildPhi(this.builder, LLVM.Int1Type(), "phi");
-	        var trueValue = LLVM.ConstInt(LLVM.Int1Type(), 1, False);
-
-			LLVM.AddIncoming(phi, out trueValue, out incoming, 1);
-			LLVM.AddIncoming(phi, out rhs, out lorRhs, 1);
-
-            LLVM.PositionBuilderAtEnd(this.builder, lorEnd);
-
-            this.valueStack.Push(phi);
-        }
-
-	    private void NumericalExpressionCheck(BinaryExpressionSyntax node)
-	    {
-	        var left = this.semanticModel.GetTypeInfo(node.Left);
-	        var right = this.semanticModel.GetTypeInfo(node.Right);
-
-	        var leftType = left.Type;
-	        var rightType = right.Type;
-
-	        if (!leftType.Equals(rightType) && (leftType.SpecialType != SpecialType.System_Int16 || leftType.SpecialType != SpecialType.System_Int32 || leftType.SpecialType != SpecialType.System_Int64))
-	        {
-	            throw new Exception("Type mismatch exception");
-	        }
-	    }
-
-	    private void AddExpression(BinaryExpressionSyntax node)
-	    {
-	        this.BinOp(node, LLVMOpcode.LLVMAdd, "add");
-	    }
-
-        private void SubExpression(BinaryExpressionSyntax node)
-        {
-            this.BinOp(node, LLVMOpcode.LLVMSub, "sub");
-        }
-
-        private void MulExpression(BinaryExpressionSyntax node)
-        {
-            this.BinOp(node, LLVMOpcode.LLVMMul, "mul");
-        }
-
-        private void DivExpression(BinaryExpressionSyntax node)
-        {
-            this.BinOp(node, LLVMOpcode.LLVMSDiv, "div");
-        }
-
-        private void ModExpression(BinaryExpressionSyntax node)
-        {
-            this.BinOp(node, LLVMOpcode.LLVMSRem, "rem");
-        }
-
-        private void BitAndExpression(BinaryExpressionSyntax node)
-        {
-            this.BinOp(node, LLVMOpcode.LLVMAnd, "and");
-        }
-
-        private void BitOrExpression(BinaryExpressionSyntax node)
-        {
-            this.BinOp(node, LLVMOpcode.LLVMOr, "or");
-        }
-
-        private void XorExpression(BinaryExpressionSyntax node)
-        {
-            this.BinOp(node, LLVMOpcode.LLVMXor, "xor");
-        }
-
-	    private void BinOp(BinaryExpressionSyntax node, LLVMOpcode opcode, string name)
-	    {
-	        this.NumericalExpressionCheck(node);
-            this.valueStack.Push(LLVM.BuildBinOp(builder, opcode, this.Pop(node.Left), this.Pop(node.Right), name));
 	    }
 
         // More information can be found: http://llvm.org/docs/GarbageCollection.html#llvm-ir-features
@@ -431,6 +249,11 @@
             this.Visit(node);
             return this.valueStack.Pop().Convert(this.builder, this.semanticModel.GetTypeInfo(node));
         }
+
+		private LLVMValueRef OnlyPop(ExpressionSyntax node)
+		{
+			return this.valueStack.Pop().Convert(this.builder, this.semanticModel.GetTypeInfo(node));
+		}
 
 		private void Push(ExpressionSyntax node, LLVMValueRef value)
 		{

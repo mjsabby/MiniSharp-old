@@ -46,8 +46,10 @@
             var data = Initialize(tree);
             var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
             v.Visit(tree.GetRoot());
-
-            var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
+			LLVM.DumpModule(data.module);
+	        LLVM.WriteBitcodeToFile(data.module, @"C:\a.bc");
+	        LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
+			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
             Assert.IsTrue(addMethod() == 50);
         }
 
@@ -75,7 +77,8 @@
             var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
             v.Visit(tree.GetRoot());
             LLVM.DumpModule(data.module);
-            var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
+			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
             Assert.IsTrue(addMethod() == 0);
         }
 
@@ -104,7 +107,8 @@
             var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
             v.Visit(tree.GetRoot());
             LLVM.DumpModule(data.module);
-            var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
+			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
             Assert.IsTrue(addMethod() == 50);
         }
 
@@ -133,7 +137,8 @@
             var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
             v.Visit(tree.GetRoot());
             LLVM.DumpModule(data.module);
-            var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
+			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
             var result = addMethod();
             Assert.IsTrue(result == 50);
         }
@@ -160,7 +165,8 @@ public class C
             var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
             v.Visit(tree.GetRoot());
             LLVM.DumpModule(data.module);
-            var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
+			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
             var result = addMethod();
             Assert.IsTrue(result == 100);
         }
@@ -187,12 +193,114 @@ public class C
             var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
             v.Visit(tree.GetRoot());
             LLVM.DumpModule(data.module);
-            var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
+			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
             var result = addMethod();
             Assert.IsTrue(result == 101);
         }
 
-        [TestMethod]
+		[TestMethod]
+		public void PostIncrementTest2()
+		{
+			int i = 1;
+			i = i++ * i;
+			var tree = CSharpSyntaxTree.ParseText(@"
+public class C
+{
+    private static int Main()
+    {
+        int i = -1;
+        i = i++;
+
+        return i;
+    }
+}");
+			var data = Initialize(tree);
+			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
+			v.Visit(tree.GetRoot());
+			LLVM.DumpModule(data.module);
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
+			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
+			var result = addMethod();
+			Assert.IsTrue(result == -1);
+		}
+
+		[TestMethod]
+		public void PostIncrementTest3()
+		{
+
+			var tree = CSharpSyntaxTree.ParseText(@"
+public class C
+{
+    private static int Main()
+    {
+			int i = 1;
+			i = i++ * i++;
+
+        return i;
+    }
+}");
+			var data = Initialize(tree);
+			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
+			v.Visit(tree.GetRoot());
+			LLVM.DumpModule(data.module);
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
+			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
+			var result = addMethod();
+			Assert.IsTrue(result == 2);
+		}
+
+		[TestMethod]
+		public void PostIncrementTest4()
+		{
+
+			var tree = CSharpSyntaxTree.ParseText(@"
+public class C
+{
+    private static int Main()
+    {
+			int i = 0x7fffffff;
+			i = i++ * i++;
+
+        return i;
+    }
+}");
+			var data = Initialize(tree);
+			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
+			v.Visit(tree.GetRoot());
+			LLVM.DumpModule(data.module);
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
+			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
+			var result = addMethod();
+			Assert.IsTrue(result == -2147483648);
+		}
+
+		[TestMethod]
+		public void PostIncrementTest5()
+		{
+
+			var tree = CSharpSyntaxTree.ParseText(@"
+public class C
+{
+    private static int Main()
+    {
+			int i = 0x7fffffff -1;
+			i = i++ + ++i;
+
+        return i;
+    }
+}");
+			var data = Initialize(tree);
+			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
+			v.Visit(tree.GetRoot());
+			LLVM.DumpModule(data.module);
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
+			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
+			var result = addMethod();
+			Assert.IsTrue(result == -2);
+		}
+
+		[TestMethod]
         public void ForLoopTest()
         {
             var tree = CSharpSyntaxTree.ParseText(@"
@@ -213,7 +321,8 @@ public class C
             var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
             v.Visit(tree.GetRoot());
             LLVM.DumpModule(data.module);
-            var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
+			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
             var result = addMethod();
             Assert.IsTrue(result == 98);
         }
@@ -240,6 +349,7 @@ public class C
 			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
 			v.Visit(tree.GetRoot());
 			LLVM.DumpModule(data.module);
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
 			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
 			var result = addMethod();
 			Assert.IsTrue(result == 4);
@@ -265,7 +375,7 @@ foo:
 			var data = Initialize(tree);
 			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
 			v.Visit(tree.GetRoot());
-
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
 			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
 			Assert.IsTrue(addMethod() == 1);
 		}
@@ -290,7 +400,7 @@ foo:
 			var data = Initialize(tree);
 			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
 			v.Visit(tree.GetRoot());
-
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
 			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
 			Assert.IsTrue(addMethod() == 1);
 		}
@@ -315,7 +425,7 @@ i++;
 			var data = Initialize(tree);
 			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
 			v.Visit(tree.GetRoot());
-
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
 			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
 			Assert.IsTrue(addMethod() == 2);
 		}
@@ -346,7 +456,7 @@ i++;
 			var data = Initialize(tree);
 			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
 			v.Visit(tree.GetRoot());
-
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
 			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
 			Assert.IsTrue(addMethod() == 9);
 		}
@@ -371,7 +481,7 @@ i++;
 			var data = Initialize(tree);
 			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
 			v.Visit(tree.GetRoot());
-
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
 			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
 			Assert.IsTrue(addMethod() == 2);
 		}
@@ -396,7 +506,7 @@ i++;
 			var data = Initialize(tree);
 			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
 			v.Visit(tree.GetRoot());
-
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
 			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
 			Assert.IsTrue(addMethod() == 1);
 		}
@@ -427,7 +537,7 @@ const int kValue = 23;
 			var data = Initialize(tree);
 			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
 			v.Visit(tree.GetRoot());
-
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
 			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
 			Assert.IsTrue(addMethod() == 0);
 		}
@@ -451,6 +561,7 @@ return -11;
 			var data = Initialize(tree);
 			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
 			v.Visit(tree.GetRoot());
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
 			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
 			Assert.IsTrue(addMethod() == -11);
 		}
@@ -482,6 +593,7 @@ int i = 5;
 			var data = Initialize(tree);
 			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
 			v.Visit(tree.GetRoot());
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
 			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
 			Assert.IsTrue(addMethod() == 5);
 		}
@@ -522,6 +634,7 @@ return ret;
 			var data = Initialize(tree);
 			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
 			v.Visit(tree.GetRoot());
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
 			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
 			Assert.IsTrue(addMethod() == 0);
 		}
@@ -562,6 +675,7 @@ return ret;
 			var data = Initialize(tree);
 			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
 			v.Visit(tree.GetRoot());
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
 			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
 			Assert.IsTrue(addMethod() == 0);
 		}
@@ -602,6 +716,8 @@ return ret;
 			var data = Initialize(tree);
 			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
 			v.Visit(tree.GetRoot());
+			LLVM.DumpModule(data.module);
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
 			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
 			Assert.IsTrue(addMethod() == 0);
 		}
@@ -642,6 +758,7 @@ return ret;
 			var data = Initialize(tree);
 			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
 			v.Visit(tree.GetRoot());
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
 			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
 			Assert.IsTrue(addMethod() == 1);
 		}
@@ -679,6 +796,7 @@ int ret = 2;
 			var data = Initialize(tree);
 			var v = new LLVMIRGenerationVisitor(data.model, data.module, data.builder, new Stack<LLVMValueRef>());
 			v.Visit(tree.GetRoot());
+			LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
 			var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(data.engine, v.Function), typeof(Add));
 			Assert.IsTrue(addMethod() == 4);
 		}
