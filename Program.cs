@@ -62,7 +62,7 @@ namespace MiniSharpCompiler
 			var platform = System.Environment.OSVersion.Platform;
 			if (platform == PlatformID.Win32NT) // On Windows, LLVM currently (3.6) does not support PE/COFF
 			{
-				LLVM.SetTarget(module, Marshal.PtrToStringAnsi(LLVM.GetDefaultTargetTriple()) + "-elf");
+				LLVM.SetTarget(module, string.Concat(Marshal.PtrToStringAnsi(LLVM.GetDefaultTargetTriple()), "-elf"));
 			}
 
 			var options = new LLVMMCJITCompilerOptions();
@@ -81,28 +81,15 @@ namespace MiniSharpCompiler
 			LLVM.AddTargetData(LLVM.GetExecutionEngineTargetData(engine), passManager);
 			
 			var tree = CSharpSyntaxTree.ParseText(@"
-static int Main(int args)
+    class C
+    {
+        static double F()
         {
-            int i = 0;
-            int loopCounter = 0;
-            while (i < 100)
-            {
-                if (i % 2 == 0)
-                {
-                    i += 1;
-                    continue;
-                    i = i - 1;
-                }
-                else
-                {
-                    i = i + 1;
-                }
-
-                loopCounter = loopCounter + 1;
-            }
-
-            return loopCounter;
-        }");
+int i = 1;
+            double f = 10.0 + i;
+            return f;
+        }
+    }");
 			var tree2 = CSharpSyntaxTree.ParseText(@"
 
 using System;
@@ -231,11 +218,10 @@ return 0;
 
 			//int ddd = f();
 			LLVM.AddCFGSimplificationPass(passManager);
-			LLVM.AddInstructionCombiningPass(passManager);
-			LLVM.AddBasicAliasAnalysisPass(passManager);
-			LLVM.AddGVNPass(passManager);
-			LLVM.AddPromoteMemoryToRegisterPass(passManager);
-			LLVM.RunFunctionPassManager(passManager, v.Function);
+			//LLVM.AddInstructionCombiningPass(passManager);
+			//LLVM.AddBasicAliasAnalysisPass(passManager);
+			//LLVM.AddGVNPass(passManager);
+			//LLVM.AddPromoteMemoryToRegisterPass(passManager);
 			LLVM.RunFunctionPassManager(passManager, v.Function);
 			LLVM.DumpModule(module);
 

@@ -128,7 +128,9 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="ConversionTests.cs" />
     <Compile Include="ControlFlowTests.cs" />
+    <Compile Include="TestSupport.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
