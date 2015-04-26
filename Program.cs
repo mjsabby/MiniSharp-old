@@ -89,7 +89,7 @@ static int Main(int args)
             {
                 if (i % 2 == 0)
                 {
-                    i = i + 1;
+                    i += 1;
                     continue;
                     i = i - 1;
                 }

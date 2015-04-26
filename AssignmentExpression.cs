@@ -17,7 +17,7 @@
 			var rvalue = this.OnlyPop(node.Right);
 
 			this.valueStack.Push(rvalue);
-			this.valueStack.Push(lvalue);
+			this.valueStack.Push(LLVM.BuildLoad(this.builder, lvalue, string.Empty));
 
 			switch (kind)
 			{
