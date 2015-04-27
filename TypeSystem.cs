@@ -42,18 +42,25 @@
 
         public static LLVMValueRef Convert(this LLVMValueRef value, LLVMBuilderRef builder, TypeInfo t)
         {
-            if (t.Type.Equals(t.ConvertedType))
+            var fromType = t.Type;
+            var toType = t.ConvertedType;
+            return Convert(value, builder, fromType, toType);
+        }
+
+        public static LLVMValueRef Convert(this LLVMValueRef value, LLVMBuilderRef builder, ITypeSymbol fromType, ITypeSymbol toType)
+        {
+            if (fromType.Equals(toType))
             {
                 return value;
             }
 
-            var convertedType = t.ConvertedType.Convert();
+            LLVMTypeRef convertedType = toType.Convert();
 
-            switch (t.Type.SpecialType)
+            switch (fromType.SpecialType)
             {
                 case SpecialType.System_IntPtr:
                 case SpecialType.System_UIntPtr:
-                    switch (t.ConvertedType.SpecialType)
+                    switch (toType.SpecialType)
                     {
                         case SpecialType.System_Int32:
                         case SpecialType.System_UInt32:
@@ -63,7 +70,7 @@
                     }
                     break;
                 case SpecialType.System_SByte:
-                    switch (t.ConvertedType.SpecialType)
+                    switch (toType.SpecialType)
                     {
                         // 6.1.2 Implicit numeric conversions
                         case SpecialType.System_Int16:
@@ -85,7 +92,7 @@
                     }
                     break;
                 case SpecialType.System_Byte:
-                    switch (t.ConvertedType.SpecialType)
+                    switch (toType.SpecialType)
                     {
                         // 6.1.2 Implicit numeric conversions
                         case SpecialType.System_Int16:
@@ -107,7 +114,7 @@
                     }
                     break;
                 case SpecialType.System_Int16:
-                    switch (t.ConvertedType.SpecialType)
+                    switch (toType.SpecialType)
                     {
                         // 6.1.2 Implicit numeric conversions
                         case SpecialType.System_Int32:
@@ -130,7 +137,7 @@
                     }
                     break;
                 case SpecialType.System_UInt16:
-                    switch (t.ConvertedType.SpecialType)
+                    switch (toType.SpecialType)
                     {
                         // 6.1.2 Implicit numeric conversions
                         case SpecialType.System_Int32:
@@ -152,7 +159,7 @@
                     }
                     break;
                 case SpecialType.System_Int32:
-                    switch (t.ConvertedType.SpecialType)
+                    switch (toType.SpecialType)
                     {
                         // 6.1.2 Implicit numeric conversions
                         case SpecialType.System_Int64:
@@ -175,7 +182,7 @@
                     }
                     break;
                 case SpecialType.System_UInt32:
-                    switch (t.ConvertedType.SpecialType)
+                    switch (toType.SpecialType)
                     {
                         // 6.1.2 Implicit numeric conversions
                         case SpecialType.System_Int64:
@@ -197,7 +204,7 @@
                     }
                     break;
                 case SpecialType.System_Int64:
-                    switch (t.ConvertedType.SpecialType)
+                    switch (toType.SpecialType)
                     {
                         // 6.1.2 Implicit numeric conversions
                         case SpecialType.System_Single:
@@ -218,7 +225,7 @@
                     }
                     break;
                 case SpecialType.System_UInt64:
-                    switch (t.ConvertedType.SpecialType)
+                    switch (toType.SpecialType)
                     {
                         // 6.1.2 Implicit numeric conversions
                         case SpecialType.System_Single:
@@ -239,7 +246,7 @@
                     }
                     break;
                 case SpecialType.System_Char:
-                    switch (t.ConvertedType.SpecialType)
+                    switch (toType.SpecialType)
                     {
                         // 6.1.2 Implicit numeric conversions
                         case SpecialType.System_UInt16:
@@ -262,7 +269,7 @@
                     }
                     break;
                 case SpecialType.System_Single:
-                    switch (t.ConvertedType.SpecialType)
+                    switch (toType.SpecialType)
                     {
                         // 6.1.2 Implicit numeric conversions
                         case SpecialType.System_Double:
@@ -284,7 +291,7 @@
                     }
                     break;
                 case SpecialType.System_Double:
-                    switch (t.ConvertedType.SpecialType)
+                    switch (toType.SpecialType)
                     {
                         // 6.2.1 Explicit numeric conversions
                         case SpecialType.System_SByte:
@@ -305,7 +312,7 @@
                     }
                     break;
                 case SpecialType.System_Decimal:
-                    switch (t.ConvertedType.SpecialType)
+                    switch (toType.SpecialType)
                     {
                         // 6.2.1 Explicit numeric conversions
                         case SpecialType.System_SByte:

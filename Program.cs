@@ -85,9 +85,10 @@ namespace MiniSharpCompiler
     {
         static double F()
         {
-int i = 1;
-            double f = 10.0 + i;
-            return f;
+            float a = 10.0F;
+            int b = (int)a;
+            int c = 10 + b;
+            return (float)c;
         }
     }");
 			var tree2 = CSharpSyntaxTree.ParseText(@"
