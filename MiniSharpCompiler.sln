@@ -48,7 +48,8 @@ Global
 		{39BF8FED-AAC3-40FC-AE6A-7982DBAF500F}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{39BF8FED-AAC3-40FC-AE6A-7982DBAF500F}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{39BF8FED-AAC3-40FC-AE6A-7982DBAF500F}.Release|x64.ActiveCfg = Release|Any CPU
-		{39BF8FED-AAC3-40FC-AE6A-7982DBAF500F}.Release|x86.ActiveCfg = Release|Any CPU
+		{39BF8FED-AAC3-40FC-AE6A-7982DBAF500F}.Release|x86.ActiveCfg = Release|x86
+		{39BF8FED-AAC3-40FC-AE6A-7982DBAF500F}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
