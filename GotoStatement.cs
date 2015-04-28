@@ -20,8 +20,8 @@
                     gotoBB = this.currentSwitchStatement[constantValueObject];
                     break;
                 case SyntaxKind.None:
-                    var identifier = ((IdentifierNameSyntax) node.Expression).Identifier.Text;
-                    var basicBlocks = this.symbolTable.Peek().BasicBlocks;
+                    var identifier = ((IdentifierNameSyntax)node.Expression).Identifier.Text;
+                    var basicBlocks = this.labels.Peek();
                     if (!basicBlocks.TryGetValue(identifier, out gotoBB))
                     {
                         gotoBB = LLVM.AppendBasicBlock(this.function, identifier);

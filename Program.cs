@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -12,6 +13,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace MiniSharpCompiler
 {
+
 	public class Program2
 	{
 		public static int Prop { get; set; }
@@ -19,7 +21,11 @@ namespace MiniSharpCompiler
 
 	class Program
 	{
-	    static int f()
+
+        [DllImport("libLLVM")]
+        public static extern void LLVMLinkInGC();
+
+        static int f()
 	    {
             int i = 0;
             while (i < 100)
@@ -40,6 +46,8 @@ namespace MiniSharpCompiler
 
 		private static void Main(string[] args)
 		{
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
 			// Make the module, which holds all the code.
 			LLVMModuleRef module = LLVM.ModuleCreateWithName("my cool jit");
 			LLVMBuilderRef builder = LLVM.CreateBuilder();
@@ -62,7 +70,7 @@ namespace MiniSharpCompiler
 			var platform = System.Environment.OSVersion.Platform;
 			if (platform == PlatformID.Win32NT) // On Windows, LLVM currently (3.6) does not support PE/COFF
 			{
-				LLVM.SetTarget(module, string.Concat(Marshal.PtrToStringAnsi(LLVM.GetDefaultTargetTriple()), "-elf"));
+				//LLVM.SetTarget(module, string.Concat(Marshal.PtrToStringAnsi(LLVM.GetDefaultTargetTriple()), "-elf"));
 			}
 
 			var options = new LLVMMCJITCompilerOptions();
@@ -79,6 +87,14 @@ namespace MiniSharpCompiler
 			// Set up the optimizer pipeline.  Start with registering info about how the
 			// target lays out data structures.
 			LLVM.AddTargetData(LLVM.GetExecutionEngineTargetData(engine), passManager);
+
+            LLVMLinkInGC();
+
+            sw.Stop();
+
+            Console.WriteLine("LLVM Init: " + sw.ElapsedMilliseconds);
+            sw.Reset();
+		    sw.Start();
 			
 			var tree = CSharpSyntaxTree.ParseText(@"
     class C
@@ -197,36 +213,85 @@ return 0;
     }
 ");
 
+		    sw.Stop();
+            Console.WriteLine("CSharp Parse Time: " + sw.ElapsedMilliseconds);
+            sw.Reset();
+
+            sw.Start();
+
 			var sm = tree.GetRoot();
             var s = MetadataReference.CreateFromAssembly(typeof(object).Assembly);
 			var s2 = MetadataReference.CreateFromAssembly(typeof(Hashtable).Assembly);
 			var compilation = CSharpCompilation.Create("MyCompilation", new[] { tree }, new[] { s });
 		    var model = compilation.GetSemanticModel(tree);
 
+            sw.Stop();
+
+            Console.WriteLine("Semantic Analysis: " + sw.ElapsedMilliseconds);
+		    sw.Reset();
+		    sw.Start();
+
 		    var d = model.Compilation.GetDiagnostics();
 
-		    var symbolVisitor = new SymbolTableBuilder(model, builder);
-            //symbolVisitor.Visit(sm);
+		    var symbolVisitor = new VariableDeclarationVisitor(model, builder);
+            symbolVisitor.Visit(sm);
 
+		    for (int i = 0; i < 100000; ++i)
+		    {
+                var stack = new Stack<LLVMValueRef>();
+                var v = new LLVMIRGenerationVisitor(model, module, builder, stack);
+                v.Visit(sm);
+		        LLVM.GetPointerToGlobal(engine, v.Function);
+		    }
+
+            /*
 		    var stack = new Stack<LLVMValueRef>();
             var v = new LLVMIRGenerationVisitor(model, module, builder, stack);
+           
+            LLVMTypeRef[] gcrootArgs = new LLVMTypeRef[2];
+		    gcrootArgs[0] = LLVM.PointerType(LLVM.PointerType(LLVM.Int8Type(), 0), 0);
+		    gcrootArgs[1] = LLVM.PointerType(LLVM.Int8Type(), 0);
 
-		    //var v = new Visitor(model);
-            v.Visit(sm);
-			LLVM.DumpModule(module);
 
-		    LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
+		    var gcRootFuncType = LLVM.FunctionType(LLVM.VoidType(), out gcrootArgs[0], 2, new LLVMBool(0));
+
+		    var ff = LLVM.AddFunction(module, "llvm.gcroot", gcRootFuncType);
+            var argsxx = new LLVMValueRef[2];
+            argsxx[0] = LLVM.BuildBitCast(builder, LLVM.ConstNull(LLVM.PointerType(LLVM.Int8Type(), 0)), LLVM.PointerType(LLVM.PointerType(LLVM.Int8Type(), 0), 0), "gc");
+            argsxx[1] = LLVM.ConstNull(LLVM.PointerType(LLVM.Int8Type(), 0));
+            LLVM.BuildCall(builder, ff, out argsxx[0], 2, "");
+            */
+            //var v = new Visitor(model);
+            
+
+            sw.Stop();
+
+            Console.WriteLine("IR Generation: " + sw.ElapsedMilliseconds);
+
+		    sw.Reset();
+		    sw.Start();
+           // LLVM.SetGC(v.Function, "shadow-stack");
+
+            LLVM.DumpModule(module);
+
+
+         //   LLVM.VerifyFunction(v.Function, LLVMVerifierFailureAction.LLVMAbortProcessAction);
 
 			//int ddd = f();
 			LLVM.AddCFGSimplificationPass(passManager);
-			//LLVM.AddInstructionCombiningPass(passManager);
-			//LLVM.AddBasicAliasAnalysisPass(passManager);
-			//LLVM.AddGVNPass(passManager);
-			//LLVM.AddPromoteMemoryToRegisterPass(passManager);
-			LLVM.RunFunctionPassManager(passManager, v.Function);
+			LLVM.AddInstructionCombiningPass(passManager);
+			LLVM.AddBasicAliasAnalysisPass(passManager);
+			LLVM.AddGVNPass(passManager);
+			LLVM.AddPromoteMemoryToRegisterPass(passManager);
+			//LLVM.RunFunctionPassManager(passManager, v.Function);
 			LLVM.DumpModule(module);
+		    LLVM.WriteBitcodeToFile(module, @"C:\users\mukul\desktop\h.bc");
 
-          //  var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(engine, v.Function), typeof(Add));
+            sw.Stop();
+
+            Console.WriteLine("Dumping + Bitcode Write: " + sw.ElapsedMilliseconds);
+		    Console.ReadKey();
+		    //  var addMethod = (Add)Marshal.GetDelegateForFunctionPointer(LLVM.GetPointerToGlobal(engine, v.Function), typeof(Add));
 //		    var x = addMethod();
 		}
 	}

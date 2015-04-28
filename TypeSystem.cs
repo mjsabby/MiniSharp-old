@@ -5,14 +5,14 @@
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
 
-    public enum MiniSharpSimpleType
+    internal enum MiniSharpSimpleType
     {
         Integral,
         FloatingPoint,
         Pointer
     }
 
-    public static class TypeSystem
+    internal static class TypeSystem
     {
         public static readonly LLVMBool True = new LLVMBool(1);
 

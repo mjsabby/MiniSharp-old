@@ -9,10 +9,6 @@
 
     public partial class LLVMIRGenerationVisitor
     {
-        private static readonly object defaultHash = new object();
-
-        private Dictionary<object, LLVMBasicBlockRef> currentSwitchStatement;
-
         public override void VisitSwitchStatement(SwitchStatementSyntax node)
         {
             var @default = LLVM.AppendBasicBlock(this.function, "sw.default");

@@ -45,9 +45,8 @@
             switch (node.Operand.Kind())
             {
                 case SyntaxKind.IdentifierName:
-                    var currentSymbolTable = this.symbolTable.Peek().Locals;
-                    var identifier = (IdentifierNameSyntax) node.Operand;
-                    operand = currentSymbolTable[identifier.Identifier.Text].Item2;
+                    SyntaxNode syntaxNode = node.Operand.DeclaringSyntaxNode(this.semanticModel);
+                    operand = this.symbolTable[syntaxNode];
                     break;
                 case SyntaxKind.SimpleMemberAccessExpression:
                     throw new NotImplementedException("PostIncrementExpression/PostDecrementExpression for SimpleMemberAccessExpression is not implemented");

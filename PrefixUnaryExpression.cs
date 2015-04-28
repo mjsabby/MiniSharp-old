@@ -121,9 +121,8 @@
                     switch (node.Operand.Kind())
                     {
                         case SyntaxKind.IdentifierName:
-                            var currentSymbolTable = this.symbolTable.Peek().Locals;
-                            var identifier = (IdentifierNameSyntax) node.Operand;
-                            operand2 = currentSymbolTable[identifier.Identifier.Text].Item2;
+                            SyntaxNode syntaxNode = node.Operand.DeclaringSyntaxNode(this.semanticModel);
+                            operand2 = this.symbolTable[syntaxNode];
                             break;
                         case SyntaxKind.SimpleMemberAccessExpression:
                             throw new NotImplementedException("PreIncrementExpression/PreDecrementExpression for SimpleMemberAccessExpression is not implemented");

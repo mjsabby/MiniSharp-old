@@ -8,7 +8,7 @@
         public override void VisitLabeledStatement(LabeledStatementSyntax node)
         {
             var identifier = node.Identifier.Text;
-            var basicBlocks = this.symbolTable.Peek().BasicBlocks;
+            var basicBlocks = this.labels.Peek();
 
             LLVMBasicBlockRef gotoBB;
             if (!basicBlocks.TryGetValue(identifier, out gotoBB))

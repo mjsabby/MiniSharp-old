@@ -1,6 +1,8 @@
 ﻿namespace MiniSharpCompiler
 {
+    using System;
     using LLVMSharp;
+    using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
 
     public partial class LLVMIRGenerationVisitor
@@ -10,16 +12,26 @@
         /// </summary>
         public override void VisitIdentifierName(IdentifierNameSyntax node)
         {
-            var currentSymbolTable = this.symbolTable.Peek().Locals;
-            var symbol = currentSymbolTable[node.Identifier.Text].Item2;
+            SyntaxNode syntaxNode = node.DeclaringSyntaxNode(this.semanticModel);
 
-            if (node.Parent is AssignmentExpressionSyntax)
+            if (syntaxNode != null)
             {
-                this.valueStack.Push(symbol);
-            }
-            else
-            {
-                this.Push(node, LLVM.BuildLoad(this.builder, symbol, string.Empty));
+                LLVMValueRef operand;
+
+                // if we call a method we've not yet seen ...
+                if (!this.symbolTable.TryGetValue(syntaxNode, out operand))
+                {
+                    throw new NotImplementedException("methods and classes not implemented yet");
+                }
+
+                if (node.Parent is AssignmentExpressionSyntax)
+                {
+                    this.valueStack.Push(operand);
+                }
+                else
+                {
+                    this.Push(node, LLVM.BuildLoad(this.builder, operand, string.Empty));
+                }
             }
         }
     }

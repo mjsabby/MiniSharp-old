@@ -7,38 +7,35 @@
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-    /// <summary>
-    /// Symbol Table Builder
-    /// </summary>
-    public class SymbolTableBuilder : CSharpSyntaxWalker
+    internal sealed class VariableDeclarationVisitor : CSharpSyntaxWalker
     {
         private readonly SemanticModel model;
 
         private readonly LLVMBuilderRef builder;
 
-        public SymbolTableBuilder(SemanticModel model, LLVMBuilderRef builder)
+        public VariableDeclarationVisitor(SemanticModel model, LLVMBuilderRef builder)
         {
             if (model == null)
             {
-                throw new ArgumentNullException("model");
+                throw new ArgumentNullException(nameof(model));
             }
 
             this.model = model;
             this.builder = builder;
-            this.SymbolTable = new Dictionary<VariableDeclaratorSyntax, LLVMValueRef>();
+            this.Variables = new Dictionary<VariableDeclaratorSyntax, LLVMValueRef>();
         }
 
-        public Dictionary<VariableDeclaratorSyntax, LLVMValueRef> SymbolTable;
+        public Dictionary<VariableDeclaratorSyntax, LLVMValueRef> Variables;
 
         public override void VisitVariableDeclaration(VariableDeclarationSyntax node)
         {
-            var type = this.model.GetTypeInfo(node.Type);
-            var llvmType = type.LLVMTypeRef();
+            var llvmType = this.model.GetTypeInfo(node.Type).LLVMTypeRef();
+            var variables = node.Variables;
 
-            foreach (var variable in node.Variables)
+            foreach (var variable in variables)
             {
                 var value = LLVM.BuildAlloca(this.builder, llvmType, variable.Identifier.Text);
-                this.SymbolTable.Add(variable, value);
+                this.Variables.Add(variable, value);
             }
         }
     }
