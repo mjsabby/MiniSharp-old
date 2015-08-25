@@ -220,10 +220,10 @@ return 0;
             sw.Start();
 
 			var sm = tree.GetRoot();
-            var s = MetadataReference.CreateFromAssembly(typeof(object).Assembly);
-			var s2 = MetadataReference.CreateFromAssembly(typeof(Hashtable).Assembly);
+            var s = MetadataReference.CreateFromFile(typeof(object).Assembly.Location);
+			var s2 = MetadataReference.CreateFromFile(typeof(Hashtable).Assembly.Location);
 			var compilation = CSharpCompilation.Create("MyCompilation", new[] { tree }, new[] { s });
-		    var model = compilation.GetSemanticModel(tree);
+		    var model = compilation.GetSemanticModel(tree, ignoreAccessibility: false);
 
             sw.Stop();
 

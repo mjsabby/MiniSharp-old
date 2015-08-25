@@ -92,7 +92,7 @@
             LLVMBool f = LLVM.InitializeFunctionPassManager(passManager);
 
 
-            var s = MetadataReference.CreateFromAssembly(typeof (object).Assembly);
+            var s = MetadataReference.CreateFromFile(typeof (object).Assembly.Location);
             var compilation = CSharpCompilation.Create("MyCompilation", new[] {tree}, new[] {s});
             var model = compilation.GetSemanticModel(tree);
 
